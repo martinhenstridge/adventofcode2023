@@ -3,5 +3,5 @@ from . import (
 )
 
 DAYS = {
-    "01": (day01, (None, None)),
+    "01": (day01, (54561, 54076)),
 }
