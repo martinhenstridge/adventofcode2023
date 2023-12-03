@@ -1,16 +1,6 @@
-NUMERALS = {
-    "1": "1",
-    "2": "2",
-    "3": "3",
-    "4": "4",
-    "5": "5",
-    "6": "6",
-    "7": "7",
-    "8": "8",
-    "9": "9",
-}
+import re
 
-EVERYTHING = {
+WORDS = {
     "one": "1",
     "two": "2",
     "three": "3",
@@ -20,43 +10,49 @@ EVERYTHING = {
     "seven": "7",
     "eight": "8",
     "nine": "9",
-    **NUMERALS,
 }
 
+FORWARD_DIGITS_ONLY_REGEX = r"(\d)"
+REVERSE_DIGITS_ONLY_REGEX = r"(\d)"
 
-def find_calibration_values(haystack, candidates):
-    i_first = len(haystack)
-    i_last = -1
+PARTIAL_REGEX = "|".join(WORDS)
+FORWARD_WITH_WORDS_REGEX = rf"(\d|{PARTIAL_REGEX})"
+REVERSE_WITH_WORDS_REGEX = rf"(\d|{PARTIAL_REGEX[::-1]})"
 
-    d_first = ""
-    d_last = ""
 
-    for needle, digit in candidates.items():
-        try:
-            index = haystack.index(needle)
-            if index < i_first:
-                i_first = index
-                d_first = digit
-        except ValueError:
-            pass
+def find_number(haystack, regex):
+    match = re.search(regex, haystack)
+    string = match[1]
 
-        try:
-            index = haystack.rindex(needle)
-            if index > i_last:
-                i_last = index
-                d_last = digit
-        except ValueError:
-            pass
+    if string.isdigit():
+        return string
 
-    return int(d_first + d_last)
+    try:
+        return WORDS[string]
+    except KeyError:
+        return WORDS[string[::-1]]
+
+
+def find_calibration_values(haystack, forward_regex, reverse_regex):
+    first = find_number(haystack, forward_regex)
+    last = find_number(haystack[::-1], reverse_regex)
+    return int(first + last)
 
 
 def run(data):
-    total_numerals = 0
-    total_everything = 0
+    total_digits_only = 0
+    total_with_words = 0
 
     for line in data.splitlines():
-        total_numerals += find_calibration_values(line, NUMERALS)
-        total_everything += find_calibration_values(line, EVERYTHING)
+        total_digits_only += find_calibration_values(
+            line,
+            forward_regex=FORWARD_DIGITS_ONLY_REGEX,
+            reverse_regex=REVERSE_DIGITS_ONLY_REGEX,
+        )
+        total_with_words += find_calibration_values(
+            line,
+            forward_regex=FORWARD_WITH_WORDS_REGEX,
+            reverse_regex=REVERSE_WITH_WORDS_REGEX,
+        )
 
-    return total_numerals, total_everything
+    return total_digits_only, total_with_words
