@@ -29,9 +29,8 @@ def min_max_button_times(t, d):
     # result in exceeding the record.
 
     sqrt = math.sqrt(t * t - 4 * d)
-    b1 = (t + sqrt) / 2
-    b2 = (t - sqrt) / 2
-    bmin, bmax = sorted([b1, b2])
+    bmin = (t - sqrt) / 2
+    bmax = (t + sqrt) / 2
     return math.floor(bmin + 1), math.ceil(bmax - 1)
 
 
