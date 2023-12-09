@@ -3,62 +3,31 @@ from collections import Counter
 JOKER = "_"
 
 CARD_STRENGTH = {
-    JOKER: 0,
-    "2": 1,
-    "3": 2,
-    "4": 3,
-    "5": 4,
-    "6": 5,
-    "7": 6,
-    "8": 7,
-    "9": 8,
-    "T": 9,
-    "J": 10,
-    "Q": 11,
-    "K": 12,
-    "A": 13,
+    JOKER: 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "T": 10,
+    "J": 11,
+    "Q": 12,
+    "K": 13,
+    "A": 14,
 }
 
 TYPE_STRENGTH = {
-    (1, 1, 1, 1, 1): 0,
-    (2, 1, 1, 1): 1,
-    (2, 2, 1): 2,
-    (3, 1, 1): 3,
-    (3, 2): 4,
-    (4, 1): 5,
-    (5,): 6
+    (1, 1, 1, 1, 1): 1,
+    (2, 1, 1, 1): 2,
+    (2, 2, 1): 3,
+    (3, 1, 1): 4,
+    (3, 2): 5,
+    (4, 1): 6,
+    (5,): 7
 }
-
-
-class Hand:
-    def __init__(self, cards):
-        self.cards = cards
-        self.type_strength = self.type_strength(cards)
-
-    def replace(self, a, b):
-        cards = self.cards.replace(a, b)
-        return Hand(cards)
-
-    def __lt__(self, other):
-        if self.type_strength < other.type_strength:
-            return True
-        if self.type_strength > other.type_strength:
-            return False
-        for s, o in zip(self.cards, other.cards):
-            if CARD_STRENGTH[s] < CARD_STRENGTH[o]:
-                return True
-            if CARD_STRENGTH[s] > CARD_STRENGTH[o]:
-                return False
-
-    @staticmethod
-    def type_strength(cards):
-        counts = Counter(cards)
-        jokers = counts.pop(JOKER, 0)
-        if jokers == 5:
-            return TYPE_STRENGTH[(5,)]
-        signature = sorted(counts.values(), reverse=True)
-        signature[0] += jokers
-        return TYPE_STRENGTH[tuple(signature)]
 
 
 def parse_hands(data):
@@ -67,12 +36,33 @@ def parse_hands(data):
         yield cards, int(bid)
 
 
+def hand_type(cards):
+    counts = Counter(cards)
+    jokers = counts.pop(JOKER, 0)
+
+    if jokers == 5:
+        return (5,)
+
+    signature = sorted(counts.values(), reverse=True)
+    signature[0] += jokers
+    return tuple(signature)
+
+
+def hand_value(cards):
+    value = TYPE_STRENGTH[hand_type(cards)] << 40
+    for i, card in enumerate(cards):
+        value |= CARD_STRENGTH[card] << 8 * (4 - i)
+    return value
+
+
 def calculate_winnings(hands):
-    return sum(bid * (i + 1) for i, (hand, bid) in enumerate(sorted(hands)))
+    return sum(bid * (i + 1) for i, (_, bid) in enumerate(sorted(hands)))
 
 
 def run(data):
-    orig = [(Hand(cards), bid) for cards, bid in parse_hands(data)]
-    joke = [(hand.replace("J", JOKER), bid) for hand, bid in orig]
+    hands = {cards: bid for cards, bid in parse_hands(data)}
+
+    orig = [(hand_value(cards), bid) for cards, bid in hands.items()]
+    joke = [(hand_value(cards.replace("J", JOKER)), bid) for cards, bid in hands.items()]
 
     return calculate_winnings(orig), calculate_winnings(joke)
