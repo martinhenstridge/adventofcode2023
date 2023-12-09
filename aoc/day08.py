@@ -1,3 +1,4 @@
+import itertools
 import math
 import re
 
@@ -16,28 +17,23 @@ def parse_path_network(data):
     return path, network
 
 
-def steps(path):
-    while True:
-        yield from path
-
-
-def traverse(network, path, start, terminate):
+def traverse(network, path, start, ending):
     node = start
     count = 0
 
-    for step in steps(path):
+    for step in itertools.cycle(path):
         node = network[node][step]
         count += 1
-        if terminate(node):
+        if node.endswith(ending):
             return count
 
 
 def run(data):
     path, network = parse_path_network(data)
 
-    count_single = traverse(network, path, "AAA", lambda n: n == "ZZZ")
+    count_single = traverse(network, path, "AAA", "ZZZ")
     counts_multi = [
-        traverse(network, path, node, lambda n: n.endswith("Z"))
+        traverse(network, path, node, "Z")
         for node in network
         if node.endswith("A")
     ]
