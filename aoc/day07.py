@@ -26,7 +26,7 @@ TYPE_STRENGTH = {
     (3, 1, 1): 4,
     (3, 2): 5,
     (4, 1): 6,
-    (5,): 7
+    (5,): 7,
 }
 
 
@@ -63,6 +63,8 @@ def run(data):
     hands = {cards: bid for cards, bid in parse_hands(data)}
 
     orig = [(hand_value(cards), bid) for cards, bid in hands.items()]
-    joke = [(hand_value(cards.replace("J", JOKER)), bid) for cards, bid in hands.items()]
+    joke = [
+        (hand_value(cards.replace("J", JOKER)), bid) for cards, bid in hands.items()
+    ]
 
     return calculate_winnings(orig), calculate_winnings(joke)
