@@ -1,57 +1,64 @@
-from enum import Enum
 from collections import Counter
 
 JOKER = "_"
-STRENGTH = {
-    "_": 1,
-    "2": 2,
-    "3": 3,
-    "4": 4,
-    "5": 5,
-    "6": 6,
-    "7": 7,
-    "8": 8,
-    "9": 9,
-    "T": 10,
-    "J": 11,
-    "Q": 12,
-    "K": 13,
-    "A": 14,
+
+CARD_STRENGTH = {
+    JOKER: 0,
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "5": 4,
+    "6": 5,
+    "7": 6,
+    "8": 7,
+    "9": 8,
+    "T": 9,
+    "J": 10,
+    "Q": 11,
+    "K": 12,
+    "A": 13,
 }
 
-
-class Type(Enum):
-    FIVE_OF_A_KIND = 7
-    FOUR_OF_A_KIND = 6
-    FULL_HOUSE = 5
-    THREE_OF_A_KIND = 4
-    TWO_PAIR = 3
-    ONE_PAIR = 2
-    HIGH_CARD = 1
+TYPE_STRENGTH = {
+    (1, 1, 1, 1, 1): 0,
+    (2, 1, 1, 1): 1,
+    (2, 2, 1): 2,
+    (3, 1, 1): 3,
+    (3, 2): 4,
+    (4, 1): 5,
+    (5,): 6
+}
 
 
 class Hand:
     def __init__(self, cards):
         self.cards = cards
-        self.kind = hand_type(cards)
-
-    def __hash__(self):
-        return hash(self.cards)
-
-    def __lt__(self, other):
-        if self.kind.value < other.kind.value:
-            return True
-        if self.kind.value > other.kind.value:
-            return False
-        for s, o in zip(self.cards, other.cards):
-            if STRENGTH[s] < STRENGTH[o]:
-                return True
-            if STRENGTH[s] > STRENGTH[o]:
-                return False
+        self.type_strength = self.type_strength(cards)
 
     def replace(self, a, b):
         cards = self.cards.replace(a, b)
         return Hand(cards)
+
+    def __lt__(self, other):
+        if self.type_strength < other.type_strength:
+            return True
+        if self.type_strength > other.type_strength:
+            return False
+        for s, o in zip(self.cards, other.cards):
+            if CARD_STRENGTH[s] < CARD_STRENGTH[o]:
+                return True
+            if CARD_STRENGTH[s] > CARD_STRENGTH[o]:
+                return False
+
+    @staticmethod
+    def type_strength(cards):
+        counts = Counter(cards)
+        jokers = counts.pop(JOKER, 0)
+        if jokers == 5:
+            return TYPE_STRENGTH[(5,)]
+        signature = sorted(counts.values(), reverse=True)
+        signature[0] += jokers
+        return TYPE_STRENGTH[tuple(signature)]
 
 
 def parse_hands(data):
@@ -60,50 +67,12 @@ def parse_hands(data):
         yield cards, int(bid)
 
 
-def hand_type(cards):
-    if JOKER in cards:
-        cards = optimise(cards)
-
-    counts = sorted(Counter(cards).values(), reverse=True)
-    if counts[0] == 5:
-        return Type.FIVE_OF_A_KIND
-    if counts[0] == 4:
-        return Type.FOUR_OF_A_KIND
-    if counts[0] == 3 and counts[1] == 2:
-        return Type.FULL_HOUSE
-    if counts[0] == 3 and counts[1] == 1:
-        return Type.THREE_OF_A_KIND
-    if counts[0] == 2 and counts[1] == 2:
-        return Type.TWO_PAIR
-    if counts[0] == 2 and counts[1] == 1:
-        return Type.ONE_PAIR
-    if counts[0] == 1:
-        return Type.HIGH_CARD
-
-
-def optimise(cards):
-    without_jokers = cards.replace(JOKER, "")
-    if not without_jokers:
-        return "AAAAA"
-
-    def sort_fn(item):
-        card, count = item
-        return (count, STRENGTH[card])
-
-    ordered = sorted(Counter(without_jokers).items(), key=sort_fn)
-    replacement, _ = ordered[-1]
-    return cards.replace(JOKER, replacement)
-
-
 def calculate_winnings(hands):
-    return sum(bid * (i + 1) for i, (hand, bid) in enumerate(sorted(hands.items())))
+    return sum(bid * (i + 1) for i, (hand, bid) in enumerate(sorted(hands)))
 
 
 def run(data):
-    hands = {Hand(cards): bid for cards, bid in parse_hands(data)}
-    total1 = calculate_winnings(hands)
+    orig = [(Hand(cards), bid) for cards, bid in parse_hands(data)]
+    joke = [(hand.replace("J", JOKER), bid) for hand, bid in orig]
 
-    hands = {hand.replace("J", JOKER): bid for hand, bid in hands.items()}
-    total2 = calculate_winnings(hands)
-
-    return total1, total2
+    return calculate_winnings(orig), calculate_winnings(joke)
