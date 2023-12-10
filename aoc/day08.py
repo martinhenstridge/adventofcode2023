@@ -33,9 +33,7 @@ def run(data):
 
     count_single = traverse(network, path, "AAA", "ZZZ")
     counts_multi = [
-        traverse(network, path, node, "Z")
-        for node in network
-        if node.endswith("A")
+        traverse(network, path, node, "Z") for node in network if node.endswith("A")
     ]
 
     return count_single, math.lcm(*counts_multi)
