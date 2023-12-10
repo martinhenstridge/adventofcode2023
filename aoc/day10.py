@@ -29,10 +29,10 @@ def parse_maze(data):
 
 
 def traverse(maze, start):
+    path = set()
+
     r, c = start
     heading = Heading.E
-
-    path = set()
     while True:
         path.add((r, c))
         dr, dc = heading.value
@@ -45,8 +45,20 @@ def traverse(maze, start):
     return path
 
 
-def flood(maze, path):
-    inside = set()
+def count_inside(maze, path):
+    # Walk each row in the maze from left to right, switching between
+    # "outside" (initially) and "inside" the loop as we cross over its
+    # constituent pipes. The following are the important cases:
+    #
+    #   |                     : switch
+    #   -                     : ignore
+    #   Zig-zag (e.g. L7, FJ) : switch
+    #   Hairpin (e.g. LJ, F7) : ignore
+    #
+    # Note there may be one or more '-' pipes in between the start and
+    # end of zig-zag or hairpin sections.
+
+    count = 0
 
     for row, line in enumerate(maze):
         keep = False
@@ -54,27 +66,24 @@ def flood(maze, path):
         for col, char in enumerate(line):
             if (p := (row, col)) not in path:
                 if keep:
-                    inside.add(p)
+                    count += 1
                 continue
 
-            if char == "-":
-                continue
+            match (char, prev):
+                case ("L", _) | ("F", _):
+                    # Start of a zig-zag or hairpin, store for later
+                    prev = char
+                case ("|", _) | ("J", "F") | ("7", "L"):
+                    # Switch between inside and outside
+                    keep = not keep
 
-            if char == "|":
-                keep = not keep
-                continue
-
-            if (char == "J" and prev != "L") or (char == "7" and prev != "F"):
-                keep = not keep
-            prev = char
-
-    return inside
+    return count
 
 
 def run(data):
     maze, start = parse_maze(data)
 
     path = traverse(maze, start)
-    inside = flood(maze, path)
+    inside = count_inside(maze, path)
 
-    return len(path) // 2, len(inside)
+    return len(path) // 2, inside
