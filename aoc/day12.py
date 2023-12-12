@@ -8,48 +8,49 @@ def parse_springs(data):
 
 
 def find_groups(conditions):
-    groups = []
     count = 0
     for c in conditions:
+        if c == ord("?"):
+            return
         if c == ord("#"):
             count += 1
         elif count:
-            groups.append(count)
+            yield count
             count = 0
     if count:
-        groups.append(count)
-    return tuple(groups)
+        yield count
 
 
 def acceptable(conditions, groups, unknowns):
-    if unknowns:
-        return True
-    actual = find_groups(conditions)
-    match = (actual == groups)
-    #print(conditions, groups, actual, match)
-    return match
+    found = tuple(find_groups(conditions))
+    if len(found) > len(groups):
+        return False
 
+    for actual, expected in zip(found, groups):
+        #print(expected, actual)
+        if actual != expected:
+            return False
 
-def count_assuming(conditions, groups, unknowns, i, c):
-    conditions[i] = c
+    return len(found) == len(groups) or unknowns
 
 
 def count_combinations(conditions, groups, unknowns):
     #print("!", conditions, groups, unknowns)
     if not acceptable(conditions, groups, unknowns):
+        #print("no")
         return 0
     elif not unknowns:
+        #print("match!", conditions)
         return 1
 
     u, unknowns = unknowns[0], unknowns[1:]
-
     count = 0
-    #print("0", conditions)
-    conditions[u] = ord(".")
-    #print("1", conditions)
-    count += count_combinations(conditions, groups, unknowns)
-    conditions[u] = ord("#")
-    count += count_combinations(conditions, groups, unknowns)
+
+    #conditions[u] = ord(".")
+    count += count_combinations(conditions.replace(b"?", b".", 1), groups, unknowns)
+    #conditions[u] = ord("#")
+    count += count_combinations(conditions.replace(b"?", b"#", 1), groups, unknowns)
+
     return count
 
 
@@ -61,8 +62,9 @@ def run(data):
         #print(conditions, groups)
         #print("==")
         unknowns = [i for i, c in enumerate(conditions) if c == ord("?")]
-        total += count_combinations(conditions, groups, unknowns)
-        #input()
+        count = count_combinations(conditions, groups, unknowns)
+        #print(">>>", count)
+        total += count
     return total, 0
 
 
