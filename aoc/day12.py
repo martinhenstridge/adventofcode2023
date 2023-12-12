@@ -1,18 +1,20 @@
 import enum
 
 
-def parse_springs(data):
-    for line in data.splitlines():
-        conditions, groups = line.split()
-        yield bytearray(ord(c) for c in conditions), tuple(int(g) for g in groups.split(","))
+def parse_line(line, unfold=False):
+    cs, gs = line.split()
+    if unfold:
+        cs = "?".join([cs] * 5)
+        gs = ",".join([gs] * 5)
+    return list(cs), tuple(int(g) for g in gs.split(","))
 
 
 def find_groups(conditions):
     count = 0
     for c in conditions:
-        if c == ord("?"):
+        if c == "?":
             return
-        if c == ord("#"):
+        if c == "#":
             count += 1
         elif count:
             yield count
@@ -46,10 +48,11 @@ def count_combinations(conditions, groups, unknowns):
     u, unknowns = unknowns[0], unknowns[1:]
     count = 0
 
-    #conditions[u] = ord(".")
-    count += count_combinations(conditions.replace(b"?", b".", 1), groups, unknowns)
-    #conditions[u] = ord("#")
-    count += count_combinations(conditions.replace(b"?", b"#", 1), groups, unknowns)
+    conditions[u] = "."
+    count += count_combinations(conditions, groups, unknowns)
+    conditions[u] = "#"
+    count += count_combinations(conditions, groups, unknowns)
+    conditions[u] = "?"
 
     return count
 
@@ -57,11 +60,14 @@ def count_combinations(conditions, groups, unknowns):
 def run(data):
     #data = DATA
     total = 0
-    for conditions, groups in parse_springs(data):
+    for line in data.splitlines():
+        conditions, groups = parse_line(line)
+        #print(conditions, groups)
+        #input()
         #print("==")
         #print(conditions, groups)
         #print("==")
-        unknowns = [i for i, c in enumerate(conditions) if c == ord("?")]
+        unknowns = [i for i, c in enumerate(conditions) if c == "?"]
         count = count_combinations(conditions, groups, unknowns)
         #print(">>>", count)
         total += count
