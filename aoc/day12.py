@@ -6,7 +6,7 @@ def parse_line(line, unfold=False):
     if unfold:
         cs = "?".join([cs] * 5)
         gs = ",".join([gs] * 5)
-    return list(cs), tuple(int(g) for g in gs.split(","))
+    return cs, tuple(int(g) for g in gs.split(","))
 
 
 def find_groups(conditions):
@@ -57,20 +57,53 @@ def count_combinations(conditions, groups, unknowns):
     return count
 
 
+def assign_groups(sections, assignments):
+    if not sections:
+        return [a for a, g in assignments if not g]
+
+    section, sections = sections[0], sections[1:]
+
+    new_assignments = []
+    while assignments:
+        assignment, groups = assignments.pop()
+
+        updated = {**assignment, section: tuple()}
+        new_assignments.append((updated, groups))
+
+        required = 0
+        for i, group in enumerate(groups):
+            required += groups[i] + int(i > 0)
+            if required > len(section):
+                break
+            updated = {**assignment, section: groups[:i+1]}
+            new_assignments.append((updated, groups[i+1:]))
+
+    return assign_groups(sections, new_assignments)
+
+
+def count(conditions, groups):
+    sections = [s for s in conditions.split(".") if s]
+    for allocation in assign_groups(sections, [({}, groups)]):
+        pass
+
+
 def run(data):
     #data = DATA
     total = 0
     for line in data.splitlines():
         conditions, groups = parse_line(line)
+        print(conditions, groups)
+        count(conditions, groups)
+        #conditions = list(conditions)
         #print(conditions, groups)
         #input()
         #print("==")
         #print(conditions, groups)
         #print("==")
-        unknowns = [i for i, c in enumerate(conditions) if c == "?"]
-        count = count_combinations(conditions, groups, unknowns)
-        #print(">>>", count)
-        total += count
+        #unknowns = [i for i, c in enumerate(conditions) if c == "?"]
+        #combinations = count_combinations(conditions, groups, unknowns)
+        #print(">>>", combinations)
+        #total += combinations
     return total, 0
 
 
