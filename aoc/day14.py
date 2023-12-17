@@ -18,63 +18,50 @@ def roll(col):
                 yield "."
             empty_space = 0
             yield item
+
     for _ in range(empty_space):
         yield "."
 
 
+def rolled(cols):
+    return tuple("".join(roll(col)) for col in cols)
+
+
+def spin(cols):
+    return rotated(rolled(cols))
+
+
 def cycle(cols):
     for _ in range(4):
-        cols = rotated(roll(col) for col in cols)
+        cols = spin(cols)
     return cols
 
 
 def rotated(cols):
-    return list(reversed(["".join(row) for row in zip(*cols)]))
-
-
-def dump(cols):
-    print("--")
-    for row in zip(*cols):
-        print("".join(row))
+    return tuple(reversed(["".join(row) for row in zip(*cols)]))
 
 
 def find_nth_cycle(cols, n):
     history = {}
     for i in itertools.count():
-        signature = "".join(cols)
-        print(i, load(cols))
-        if signature in history:
+        if cols in history:
             break
-        history[signature] = i
+        history[cols] = i
         cols = cycle(cols)
 
-    offset = history[signature]
+    offset = history[cols]
     period = i - offset
     index = offset + ((n - offset) % period)
-    print("offset:", offset)
-    print("period:", period)
-    print("index:", index)
-    return index
 
+    for cols, i in history.items():
+        if i == index:
+            return cols
 
 
 def run(data):
-    #data = DATA
-    cols = ["".join(row) for row in zip(*data.splitlines())]
+    cols = tuple("".join(row) for row in zip(*data.splitlines()))
 
-    n = find_nth_cycle(cols, 1000000000)
-    print(n)
-    return 0, 0
+    one = rolled(cols)
+    billion = find_nth_cycle(cols, 1000000000)
 
-
-DATA = """\
-O....#....
-O.OO#....#
-.....##...
-OO.#O....O
-.O.....O#.
-O.#..O.#.#
-..O..#O..O
-.......O..
-#....###..
-#OO..#...."""
+    return load(one), load(billion)
