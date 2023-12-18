@@ -22,41 +22,38 @@ def parse_costs(data):
     }
 
 
-def candidates(costs, position):
-    for move in MOVES:
-        candidate = (position[0] + move[0], position[1] + move[1])
-        if candidate not in costs:
+def candidates(costs, pos, path):
+    for move in Move:
+        if len(path) > 2 and all(m == move for m in path[-3:]):
             continue
-        yield candidate, move
+        new_pos = (pos[0] + move.value[0], pos[1] + move.value[1])
+        if new_pos not in costs:
+            continue
+        yield new_pos, (*path, move)
 
 
 def find_path(costs, start, goal):
     best = {p: 0xffffffff for p in costs}
     best[start] = 0
-    for c, m in candidates(costs, start):
-        print(c, m)
 
     pending = []
-    heapq.heappush(pending, (0, start, []))
+    heapq.heappush(pending, (0, start, tuple()))
 
     while pending:
-        _, pos, moves = heapq.heappop(pending)
+        _, pos, path = heapq.heappop(pending)
         if pos == goal:
-            print(pos)
-            print(moves)
-            break
+            continue
 
-        print("considering", pos, moves)
+        #print("considering", _, pos, [p.name for p in path])
 
-        cumcost = best[pos]
-        for new_pos, new_move in candidates(costs, pos):
-            new_moves = moves[:] + [new_move]
-            if len(new_moves) > 3 and all(m == new_move for m in new_moves[-4:-1]):
-                cost = cumcost + 0xffffffff
-            else:
-                cost = cumcost + costs[new_pos]
-            heapq.heappush(pending, (cost, new_pos, new_moves))
-        input()
+        for new_pos, new_path in candidates(costs, pos, path):
+            cost = best[pos] + costs[new_pos]
+            if cost < best[new_pos] or (cost == best[new_pos] and new_path:
+                best[new_pos] = cost
+                heapq.heappush(pending, (cost, new_pos, new_path))
+
+    for k, v in best.items():
+        print(k, v)
 
     return best[goal]
 
@@ -64,7 +61,6 @@ def find_path(costs, start, goal):
 def run(data):
     data = DATA
     size, costs = parse_costs(data)
-    print(size, costs)
     cost = find_path(costs, (0, 0), (size - 1, size - 1))
     return 0, 0
 
