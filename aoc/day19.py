@@ -1,7 +1,6 @@
 import operator
 import re
 
-# mqm{a>3484:R,x>3693:zj,qmn}
 
 class UnconditionalRule:
     def __call__(self, value):
@@ -59,8 +58,7 @@ def run(data):
     for part in parts:
         target = "in"
         while target != "A" and target != "R":
-            workflow = workflows[target]
-            for rule, target in workflow:
+            for rule, target in workflows[target]:
                 if rule(part):
                     break
         if target == "A":
