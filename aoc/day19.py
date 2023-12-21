@@ -48,7 +48,7 @@ def parse_parts(data):
 
 
 def run(data):
-    #data = DATA
+    # data = DATA
     workflow_data, part_data = data.split("\n\n")
 
     workflows = {name: rules for name, rules in parse_workflows(workflow_data)}
@@ -65,6 +65,7 @@ def run(data):
             total += sum(part.values())
 
     return total, 0
+
 
 DATA = """\
 px{a<2006:qkq,m>2090:A,rfg}

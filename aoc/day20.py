@@ -54,7 +54,9 @@ class Conjunction(Module):
     def receive(self, pulse, sender):
         self.inputs[sender] = pulse
         yield from self.send(
-            Pulse.LOW if all(i is Pulse.HIGH for i in self.inputs.values()) else Pulse.HIGH
+            Pulse.LOW
+            if all(i is Pulse.HIGH for i in self.inputs.values())
+            else Pulse.HIGH
         )
 
 
